@@ -1,60 +1,36 @@
 <?php
 
-	function databaseConnect() {
-		$servername = 'localhost';
-		$username = 'root';
-		$pwd = '15m431 54n';
-		$dbname = 'Usuarios';
-		$conn = mysqli_connect($servername, $username, $pwd, $dbname);
-		if (!$conn) die('Connection failed '.mysqli_connect_error());
-		return $conn;
-	}
+	require 'conecta.php';
 
 	$message1 = '';
 	$message2 = '';
 
 	if (!empty($_POST['email']) && !empty($_POST['pwd'])) {
-		$conn = databaseConnect();
-		$sql = 'select * from users';
+		$email = $_POST['email'];
+		$pwd = $_POST['pwd'];
+
+		$sql = "select * from users where email = '$email'";
 		$result = mysqli_query($conn, $sql);
-		if (mysqli_num_rows($result) > 0) {
-			$email = $_POST['email'];
-			$pwd = $_POST['pwd'];
-			$check = false;
-			while($row = mysqli_fetch_assoc($result)) {
-				if ($row['email'] == $email && $row['pwd'] == $pwd) $check = true;
-			}
-			if (!$check) $message1 = 'El usuario no existe';
-			else header('Location: http://127.0.0.1/index.html');
+
+		if (mysqli_num_rows($result) != 0) {
+			$row = mysqli_fetch_assoc($result);
+			if (password_verify($pwd, $row['pwd'])) header('Location: http://127.0.0.1/index.html');
+			else $message1 = 'La contraseña no es válida.';
 		}
+		else $message1 = 'El usuario no existe';
 	}
 
 	if (!empty($_POST['nombre']) && !empty($_POST['emaildos']) && !empty($_POST['pwddos'])) {
-		$conn = databaseConnect();
-		$sql = 'select * from users';
-		$result = mysqli_query($conn, $sql);
-		
 		$nombre = $_POST['nombre'];
 		$email = $_POST['emaildos'];
-		$pwd = $_POST['pwddos'];
-		
-		if (mysqli_num_rows($result) > 0) {
-			$check = false;
-			while($row = mysqli_fetch_assoc($result)) {
-				if ($row['nombre'] == $nombre && $row['email'] == $email && $row['pwd'] == $pwd) $check = true;
-			}
-			if (!$check) {
-				$sql = "insert into users (nombre, pwd, email) values('$nombre', '$pwd', '$email')";
-				if (mysqli_query($conn, $sql)) $message2 = 'register success';
-				else $message2 = 'not register';
-			}
-			else $message2 = 'El usuario ya existe';
-		}
-		else {
-			$sql = "insert into users (nombre, pwd, email) values('$nombre', '$pwd', '$email')";
-			if (mysqli_query($conn, $sql)) $message2 = 'register success';
-			else $message2 = 'not register';
-		}
+		$pwd = password_hash($_POST['pwddos'], PASSWORD_DEFAULT);
+
+		$sql = "insert into users (email, pwd, nombre) values ('$email', '$pwd', '$nombre')";
+
+		$result = mysqli_query($conn, $sql);
+
+		if ($result) $message2 = 'Register success';
+		else $message2 = 'El usuario ya existe';
 		
 	}
 
